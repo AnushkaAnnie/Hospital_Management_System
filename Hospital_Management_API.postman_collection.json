@@ -1,0 +1,613 @@
+{
+  "info": {
+    "_postman_id": "9f31c810-72cb-4645-8123-hospital-patient-mgmt",
+    "name": "Hospital Patient & Appointment Management System API",
+    "description": "Comprehensive Postman collection for all 13 modules of Hospital Patient & Appointment Management System, covering Patient Registration, Doctor Availability, Conflict-Free Booking Engine, Digital Prescriptions, Medical History, Billing, and Admin Reports.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "doctorToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "patientToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "testDoctorId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "testPatientId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "testAppointmentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "testBillingId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. System Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        }
+      }
+    },
+    {
+      "name": "1. Authentication & Registration (Module 1 & 13)",
+      "item": [
+        {
+          "name": "Register New Patient (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('patientToken', jsonData.data.token);",
+                  "    pm.collectionVariables.set('testPatientId', jsonData.data.profile._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"+1-555-0999\",\n  \"role\": \"Patient\",\n  \"dob\": \"1992-07-14\",\n  \"gender\": \"Female\",\n  \"bloodGroup\": \"O+\",\n  \"medicalNotes\": \"Mild asthma. No active medications.\",\n  \"emergencyContact\": {\n    \"name\": \"David Johnson\",\n    \"relation\": \"Brother\",\n    \"phone\": \"+1-555-0998\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('adminToken', jsonData.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@hospital.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login as Doctor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('doctorToken', jsonData.data.token);",
+                  "    pm.collectionVariables.set('testDoctorId', jsonData.data.profile._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"dr.sharma@hospital.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login as Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('patientToken', jsonData.data.token);",
+                  "    pm.collectionVariables.set('testPatientId', jsonData.data.profile._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@patient.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Authenticated Profile (GET /api/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Validation Error (400 - Missing Password)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@missing-password.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Auth Failure (401 - Missing Token on Protected Route)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "appointments"]
+            }
+          }
+        },
+        {
+          "name": "Authorization RBAC Failure (403 - Patient calling Admin Route)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "dashboard"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Departments & Directory (Module 2 & 8)",
+      "item": [
+        {
+          "name": "List All Departments (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/departments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "departments"]
+            }
+          }
+        },
+        {
+          "name": "List Specializations (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/departments/specializations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "departments", "specializations"]
+            }
+          }
+        },
+        {
+          "name": "Create Department (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Oncology\",\n  \"description\": \"Comprehensive diagnosis and multi-disciplinary therapy for all cancer conditions.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/departments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "departments"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Doctors & Availability Slots (Module 2, 3, 11)",
+      "item": [
+        {
+          "name": "List & Filter Doctors by Specialization",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors?specialization=Cardiology",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "doctors"],
+              "query": [{ "key": "specialization", "value": "Cardiology" }]
+            }
+          }
+        },
+        {
+          "name": "Get Doctor Available Slots for Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors/{{testDoctorId}}/slots?date=2026-09-14",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "doctors", "{{testDoctorId}}", "slots"],
+              "query": [{ "key": "date", "value": "2026-09-14" }]
+            }
+          }
+        },
+        {
+          "name": "Doctor Updates Availability Slots (PUT /api/doctors/:id/slots)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"availabilitySlots\": [\n    {\n      \"dayOfWeek\": \"Monday\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"13:00\",\n      \"slotDurationMinutes\": 30,\n      \"maxPatientsPerSlot\": 1,\n      \"isActive\": true\n    },\n    {\n      \"dayOfWeek\": \"Tuesday\",\n      \"startTime\": \"14:00\",\n      \"endTime\": \"18:00\",\n      \"slotDurationMinutes\": 30,\n      \"maxPatientsPerSlot\": 1,\n      \"isActive\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors/{{testDoctorId}}/slots",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "doctors", "{{testDoctorId}}", "slots"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Appointment Booking & Status Workflow (Module 4 & 5)",
+      "item": [
+        {
+          "name": "Book Appointment (Conflict-Free)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.appointment) {",
+                  "    pm.collectionVariables.set('testAppointmentId', jsonData.data.appointment._id);",
+                  "}",
+                  "if (jsonData.data && jsonData.data.billing) {",
+                  "    pm.collectionVariables.set('testBillingId', jsonData.data.billing._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctorId\": \"{{testDoctorId}}\",\n  \"appointmentDate\": \"2026-09-18\",\n  \"slotTime\": \"11:00 - 11:30\",\n  \"reason\": \"Routine blood pressure and ECG evaluation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "appointments"]
+            }
+          }
+        },
+        {
+          "name": "Duplicate Booking Conflict (409 Conflict)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctorId\": \"{{testDoctorId}}\",\n  \"appointmentDate\": \"2026-09-18\",\n  \"slotTime\": \"11:00 - 11:30\",\n  \"reason\": \"Attempting to book duplicate slot\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "appointments"]
+            }
+          }
+        },
+        {
+          "name": "Doctor Confirms Appointment (PUT /api/appointments/:id/status)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Confirmed\",\n  \"remarks\": \"Doctor accepted and confirmed appointment\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments/{{testAppointmentId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "appointments", "{{testAppointmentId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "List User Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "appointments"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Digital Prescription & Medical History (Module 6 & 7)",
+      "item": [
+        {
+          "name": "Issue Digital Prescription (Doctor)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentId\": \"{{testAppointmentId}}\",\n  \"diagnosis\": \"Mild Stage 1 Hypertension with Tachycardia\",\n  \"medicines\": [\n    {\n      \"name\": \"Amlodipine Besylate\",\n      \"dosage\": \"5mg\",\n      \"frequency\": \"Once daily (morning)\",\n      \"duration\": \"30 days\",\n      \"instructions\": \"Take after breakfast with water\"\n    },\n    {\n      \"name\": \"Omega-3 Fish Oil\",\n      \"dosage\": \"1000mg\",\n      \"frequency\": \"Once daily (evening)\",\n      \"duration\": \"60 days\",\n      \"instructions\": \"Take after dinner\"\n    }\n  ],\n  \"notes\": \"Reduce sodium intake. Walk 30 minutes daily.\",\n  \"followUpDate\": \"2026-10-18T00:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/prescriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "prescriptions"]
+            }
+          }
+        },
+        {
+          "name": "Get Prescription by Appointment ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/prescriptions/appointment/{{testAppointmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "prescriptions", "appointment", "{{testAppointmentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Patient Medical History (Module 7)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/{{testPatientId}}/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "patients", "{{testPatientId}}", "history"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Billing & Notifications (Module 9 & 10)",
+      "item": [
+        {
+          "name": "Get Billing Details by Appointment",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/appointment/{{testAppointmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "billing", "appointment", "{{testAppointmentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Pay Invoice (PUT /api/billing/:id/pay)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethod\": \"Credit Card\",\n  \"transactionId\": \"TXN-CC-887419\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/{{testBillingId}}/pay",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "billing", "{{testBillingId}}", "pay"]
+            }
+          }
+        },
+        {
+          "name": "Get User Notifications & Reminders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Trigger Automated Reminders (Staff)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/reminders/trigger",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "reminders", "trigger"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Admin Dashboard & Reports (Module 12)",
+      "item": [
+        {
+          "name": "Admin Overview Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Daily & Weekly Appointment Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/reports/appointments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "reports", "appointments"]
+            }
+          }
+        },
+        {
+          "name": "Department Load Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/reports/departments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "reports", "departments"]
+            }
+          }
+        },
+        {
+          "name": "Doctor Utilization Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/reports/doctors",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "reports", "doctors"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
