@@ -1,4 +1,12 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
+
+// Ensure reliable SRV resolution for MongoDB Atlas (handles local ISP/Windows DNS issues)
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+} catch (e) {
+  // Gracefully continue
+}
 
 let memoryServer = null;
 
@@ -6,9 +14,9 @@ const connectDB = async () => {
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/hospital_management';
   
   try {
-    // Attempt standard connection with 3-second timeout
+    // Attempt standard connection with 10-second timeout for cloud/Atlas
     await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 3000
+      serverSelectionTimeoutMS: 10000
     });
     console.log(`[MongoDB Connected]: ${mongoose.connection.host}/${mongoose.connection.name}`);
   } catch (err) {
