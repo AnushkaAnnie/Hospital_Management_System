@@ -9,10 +9,10 @@
 
 | Role / Ownership | Full Name | Roll Number | Department | Section |
 | :--- | :--- | :--- | :--- | :--- |
-| **Team Lead (Sprint 1)** | Hospital Tech Lead | LT-2026-HMS-001 | Computer Science & Engineering | CSE-A |
-| **Member 2 (Sprint 2)** | Clinical Systems Eng | LT-2026-HMS-002 | Computer Science & Engineering | CSE-A |
-| **Member 3 (Sprint 3)** | Analytics & RBAC Eng | LT-2026-HMS-003 | Computer Science & Engineering | CSE-A |
-| **Member 4 (Docs & QA)** | DB Architect & QA Lead | LT-2026-HMS-004 | Computer Science & Engineering | CSE-A |
+| **Team Lead (Sprint 1)** | Anushka Tater | 2460336 | Computer Science & Engineering | CSE-A |
+| **Member 2 (Sprint 2)** | Ann Mariya | 2460331 | Computer Science & Engineering | CSE-A |
+| **Member 3 (Sprint 3)** | Anna Theresa | 2460333 | Computer Science & Engineering | CSE-A |
+| **Member 4 (Docs & QA)** | Arya Ramachandran | 2460338 | Computer Science & Engineering | CSE-A |
 
 ---
 
