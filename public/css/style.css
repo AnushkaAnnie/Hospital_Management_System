@@ -939,6 +939,77 @@ body {
   border-bottom-color: var(--primary);
 }
 
+/* Role Option Grid for Sign-In */
+.role-option-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.role-opt-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 0.5rem;
+  background: #f8fafc;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--slate);
+  font-size: 0.825rem;
+  font-weight: 600;
+  gap: 0.35rem;
+}
+
+.role-opt-btn i {
+  font-size: 1.15rem;
+}
+
+.role-opt-btn:hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.role-opt-btn.active {
+  background: #ecfdf5;
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.role-opt-btn.role-admin.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.role-opt-btn.role-doctor.active {
+  background: #f0fdfa;
+  border-color: var(--teal);
+  color: #0f766e;
+}
+
+.role-opt-btn.role-patient.active {
+  background: #ecfdf5;
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.role-hint-box {
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: #f8fafc;
+  border-left: 3px solid var(--primary);
+  font-size: 0.8rem;
+  color: var(--slate);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 /* Rx Slip Formatting */
 .rx-slip {
   background: #fff;

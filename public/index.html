@@ -45,8 +45,14 @@
 
       <!-- Auth State Profile / Actions -->
       <div class="nav-user-area" id="navUserArea">
-        <button class="btn btn-sm btn-primary" onclick="showAuthModal('login')">
+        <button class="btn btn-sm btn-primary" onclick="showAuthModal('login', 'Patient')">
           <i class="fa-solid fa-right-to-bracket"></i> Sign In
+        </button>
+        <button class="btn btn-sm btn-outline" onclick="showAuthModal('login', 'Doctor')">
+          <i class="fa-solid fa-user-doctor"></i> Doctor Login
+        </button>
+        <button class="btn btn-sm btn-outline" onclick="showAuthModal('login', 'Admin')">
+          <i class="fa-solid fa-shield-halved"></i> Admin
         </button>
         <button class="btn btn-sm btn-secondary" onclick="showAuthModal('register')">
           <i class="fa-solid fa-user-plus"></i> Register
@@ -570,8 +576,44 @@
       <!-- Login Form -->
       <form id="loginForm" onsubmit="handleLogin(event)">
         <div class="modal-body">
+          <!-- Role Selection Buttons -->
+          <div class="form-group" style="margin-bottom: 0.85rem;">
+            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--slate);">Select Portal / Role to Sign In:</label>
+            <div class="role-option-grid">
+              <button type="button" class="role-opt-btn role-patient active" id="roleBtnPatient" onclick="selectSignInRole('Patient')">
+                <i class="fa-solid fa-user"></i>
+                <span>Patient</span>
+              </button>
+              <button type="button" class="role-opt-btn role-doctor" id="roleBtnDoctor" onclick="selectSignInRole('Doctor')">
+                <i class="fa-solid fa-user-doctor"></i>
+                <span>Doctor</span>
+              </button>
+              <button type="button" class="role-opt-btn role-admin" id="roleBtnAdmin" onclick="selectSignInRole('Admin')">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>Admin</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Doctor Profile Selector (visible when Doctor is selected) -->
+          <div class="form-group" id="doctorSelectGroup" style="display: none; margin-bottom: 0.85rem;">
+            <label style="font-size: 0.85rem; font-weight: 600;">Choose Doctor Account:</label>
+            <select id="doctorQuickSelect" onchange="onDoctorQuickSelectChange(this.value)">
+              <option value="dr.sharma@hospital.com">Dr. Rajesh Sharma — Cardiology</option>
+              <option value="dr.patel@hospital.com">Dr. Ananya Patel — Neurology</option>
+              <option value="dr.chen@hospital.com">Dr. Michael Chen — Orthopedics</option>
+              <option value="custom">-- Enter Custom Doctor Email --</option>
+            </select>
+          </div>
+
+          <!-- Role Info Hint Box -->
+          <div class="role-hint-box" id="roleHintBox">
+            <i class="fa-solid fa-circle-info" id="roleHintIcon" style="color: var(--primary);"></i>
+            <span id="roleHintText">Patient Portal: Access your personal medical history, book doctor appointments, and pay bills.</span>
+          </div>
+
           <div class="form-group">
-            <label>Email Address *</label>
+            <label id="loginEmailLabel">Email Address *</label>
             <input type="email" id="loginEmail" required placeholder="name@example.com">
           </div>
           <div class="form-group">
@@ -581,7 +623,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="closeModal('authModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary">Sign In</button>
+          <button type="submit" class="btn btn-primary" id="loginSubmitBtn">Sign In as Patient</button>
         </div>
       </form>
 

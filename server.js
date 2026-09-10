@@ -9,22 +9,6 @@ const errorHandler = require('./middleware/errorHandler');
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
-connectDB().then(async () => {
-  try {
-    const User = require('./models/User');
-    const userCount = await User.countDocuments();
-    if (userCount === 0) {
-      console.log('[Server Startup]: Initializing default demonstration records...');
-      const seedData = require('./utils/seeder');
-      await seedData(false);
-      console.log('[Server Startup]: Demonstration data ready for immediate evaluation.');
-    }
-  } catch (err) {
-    console.warn('[Server Startup]: Auto-seed notice:', err.message);
-  }
-});
-
 const app = express();
 
 // Body Parser Middleware
@@ -77,10 +61,28 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`[Hospital Management Server]: Running on http://localhost:${PORT}`);
-  });
-}
+const startServer = async () => {
+  await connectDB();
+  try {
+    const User = require('./models/User');
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
+      console.log('[Server Startup]: Initializing default demonstration records...');
+      const seedData = require('./utils/seeder');
+      await seedData(false);
+      console.log('[Server Startup]: Demonstration data ready for immediate evaluation.');
+    }
+  } catch (err) {
+    console.warn('[Server Startup]: Auto-seed notice:', err.message);
+  }
+
+  if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => {
+      console.log(`[Hospital Management Server]: Running on http://localhost:${PORT}`);
+    });
+  }
+};
+
+startServer();
 
 module.exports = app;

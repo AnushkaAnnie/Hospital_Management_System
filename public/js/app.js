@@ -40,6 +40,17 @@ async function apiCall(endpoint, options = {}) {
 
     const data = await res.json();
     if (!res.ok) {
+      if (res.status === 401 && state.token && endpoint !== '/auth/login') {
+        // Clear invalid or mismatched token from previous session
+        state.token = null;
+        state.user = null;
+        state.profile = null;
+        localStorage.removeItem('pulse_token');
+        localStorage.removeItem('pulse_user');
+        localStorage.removeItem('pulse_profile');
+        renderUIForAuthState();
+        showToast('Session expired or account invalid. Please sign in again.', 'error');
+      }
       throw new Error(data.message || 'Request failed');
     }
     return data;
@@ -101,8 +112,14 @@ function renderUIForAuthState() {
   } else {
     // Guest State
     navUserArea.innerHTML = `
-      <button class="btn btn-sm btn-primary" onclick="showAuthModal('login')">
+      <button class="btn btn-sm btn-primary" onclick="showAuthModal('login', 'Patient')">
         <i class="fa-solid fa-right-to-bracket"></i> Sign In
+      </button>
+      <button class="btn btn-sm btn-outline" onclick="showAuthModal('login', 'Doctor')">
+        <i class="fa-solid fa-user-doctor"></i> Doctor Login
+      </button>
+      <button class="btn btn-sm btn-outline" onclick="showAuthModal('login', 'Admin')">
+        <i class="fa-solid fa-shield-halved"></i> Admin
       </button>
       <button class="btn btn-sm btn-secondary" onclick="showAuthModal('register')">
         <i class="fa-solid fa-user-plus"></i> Register
@@ -166,17 +183,109 @@ function onAuthSuccess() {
     switchTab('doctor-schedule');
   } else if (state.user.role === 'Admin' || state.user.role === 'Receptionist') {
     loadAdminDashboard();
-    loadAdminDepartments();
+    renderAdminDepartments();
     loadAdminReports();
     switchTab('admin-overview');
   }
 }
 
 // Modal Toggle
-function showAuthModal(mode = 'login') {
+function showAuthModal(mode = 'login', initialRole = 'Patient') {
   const modal = document.getElementById('authModal');
-  modal.classList.add('active');
+  if (modal) modal.classList.add('active');
   toggleAuthMode(mode);
+  if (mode === 'login') {
+    selectSignInRole(initialRole);
+  }
+}
+
+function selectSignInRole(role) {
+  // Update button active state
+  document.querySelectorAll('.role-opt-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`roleBtn${role}`);
+  if (btn) btn.classList.add('active');
+
+  const doctorGroup = document.getElementById('doctorSelectGroup');
+  const emailInput = document.getElementById('loginEmail');
+  const passwordInput = document.getElementById('loginPassword');
+  const submitBtn = document.getElementById('loginSubmitBtn');
+  const hintText = document.getElementById('roleHintText');
+  const hintBox = document.getElementById('roleHintBox');
+  const emailLabel = document.getElementById('loginEmailLabel');
+
+  if (role === 'Admin') {
+    if (doctorGroup) doctorGroup.style.display = 'none';
+    if (emailInput) emailInput.value = 'admin@hospital.com';
+    if (passwordInput) passwordInput.value = 'password123';
+    if (emailLabel) emailLabel.textContent = 'Administrator Email *';
+    if (submitBtn) {
+      submitBtn.textContent = 'Sign In as Administrator';
+      submitBtn.className = 'btn btn-primary';
+    }
+    if (hintText) hintText.textContent = 'Admin Console: Access executive overview, departments management, and doctor utilization reports.';
+    if (hintBox) {
+      hintBox.style.borderLeftColor = '#3b82f6';
+      hintBox.style.background = '#eff6ff';
+    }
+  } else if (role === 'Doctor') {
+    if (doctorGroup) doctorGroup.style.display = 'block';
+    const doctorSelect = document.getElementById('doctorQuickSelect');
+    const selectedEmail = doctorSelect ? doctorSelect.value : 'dr.sharma@hospital.com';
+    if (emailLabel) emailLabel.textContent = 'Doctor Email *';
+    if (selectedEmail !== 'custom') {
+      if (emailInput) emailInput.value = selectedEmail;
+      if (passwordInput) passwordInput.value = 'password123';
+    } else {
+      if (emailInput) {
+        emailInput.value = '';
+        emailInput.placeholder = 'doctor.name@hospital.com';
+      }
+      if (passwordInput) passwordInput.value = '';
+    }
+    if (submitBtn) {
+      submitBtn.textContent = 'Sign In as Doctor';
+      submitBtn.className = 'btn btn-primary';
+    }
+    if (hintText) hintText.textContent = 'Doctor Portal: Manage your consultation queue, verify bookings, and issue digital prescriptions.';
+    if (hintBox) {
+      hintBox.style.borderLeftColor = 'var(--teal)';
+      hintBox.style.background = '#f0fdfa';
+    }
+  } else {
+    // Patient
+    if (doctorGroup) doctorGroup.style.display = 'none';
+    if (emailLabel) emailLabel.textContent = 'Patient Email *';
+    if (emailInput) {
+      emailInput.value = 'john.doe@patient.com';
+      emailInput.placeholder = 'name@example.com';
+    }
+    if (passwordInput) passwordInput.value = 'password123';
+    if (submitBtn) {
+      submitBtn.textContent = 'Sign In as Patient';
+      submitBtn.className = 'btn btn-primary';
+    }
+    if (hintText) hintText.textContent = 'Patient Portal: Access your personal medical history, book doctor appointments, and pay bills.';
+    if (hintBox) {
+      hintBox.style.borderLeftColor = 'var(--primary)';
+      hintBox.style.background = '#f8fafc';
+    }
+  }
+}
+
+function onDoctorQuickSelectChange(val) {
+  const emailInput = document.getElementById('loginEmail');
+  const passwordInput = document.getElementById('loginPassword');
+  if (val === 'custom') {
+    if (emailInput) {
+      emailInput.value = '';
+      emailInput.placeholder = 'doctor.name@hospital.com';
+      emailInput.focus();
+    }
+    if (passwordInput) passwordInput.value = '';
+  } else {
+    if (emailInput) emailInput.value = val;
+    if (passwordInput) passwordInput.value = 'password123';
+  }
 }
 
 function toggleAuthMode(mode) {
@@ -187,17 +296,17 @@ function toggleAuthMode(mode) {
   const title = document.getElementById('authModalTitle');
 
   if (mode === 'login') {
-    tabBtnLogin.classList.add('active');
-    tabBtnRegister.classList.remove('active');
-    loginForm.style.display = 'block';
-    registerForm.style.display = 'none';
-    title.textContent = 'Sign In to PulseCare';
+    if (tabBtnLogin) tabBtnLogin.classList.add('active');
+    if (tabBtnRegister) tabBtnRegister.classList.remove('active');
+    if (loginForm) loginForm.style.display = 'block';
+    if (registerForm) registerForm.style.display = 'none';
+    if (title) title.textContent = 'Sign In to PulseCare';
   } else {
-    tabBtnLogin.classList.remove('active');
-    tabBtnRegister.classList.add('active');
-    loginForm.style.display = 'none';
-    registerForm.style.display = 'block';
-    title.textContent = 'Register as Patient';
+    if (tabBtnLogin) tabBtnLogin.classList.remove('active');
+    if (tabBtnRegister) tabBtnRegister.classList.add('active');
+    if (loginForm) loginForm.style.display = 'none';
+    if (registerForm) registerForm.style.display = 'block';
+    if (title) title.textContent = 'Register as Patient';
   }
 }
 
@@ -282,6 +391,32 @@ function switchTab(tabId) {
 
   const navLink = document.querySelector(`.nav-link[href="#${tabId}"]`);
   if (navLink) navLink.classList.add('active');
+
+  // Dynamically load/refresh data for the switched tab
+  if (tabId === 'directory') {
+    if (!state.doctors || state.doctors.length === 0) {
+      loadDepartments();
+      loadDoctors();
+    }
+  } else if (tabId === 'doctor-schedule' && state.token) {
+    loadDoctorAppointments();
+  } else if (tabId === 'doctor-slots' && state.token) {
+    loadDoctorSlots();
+  } else if (tabId === 'my-appointments' && state.token) {
+    loadMyAppointments();
+  } else if (tabId === 'history' && state.token) {
+    loadPatientHistory();
+  } else if (tabId === 'billing' && state.token) {
+    loadMyBillings();
+  } else if (tabId === 'notifications' && state.token) {
+    loadNotifications();
+  } else if (tabId === 'admin-overview' && state.token) {
+    loadAdminDashboard();
+  } else if (tabId === 'admin-departments' && state.token) {
+    loadDepartments();
+  } else if (tabId === 'admin-reports' && state.token) {
+    loadAdminReports();
+  }
 }
 
 // -------------------------------------------------------------
@@ -290,12 +425,15 @@ function switchTab(tabId) {
 async function loadDepartments() {
   try {
     const res = await apiCall('/departments');
-    state.departments = res.data;
+    state.departments = res.data || [];
 
     // Render Department Pills
     const container = document.getElementById('deptFilterPills');
-    container.innerHTML = `<button class="pill active" onclick="filterByDepartment('all')">All Departments</button>` +
-      res.data.map(d => `<button class="pill" onclick="filterByDepartment('${d._id}')">${d.name} (${d.doctorCount})</button>`).join('');
+    if (container) {
+      const activeDept = state.selectedDepartment || 'all';
+      container.innerHTML = `<button class="pill ${activeDept === 'all' ? 'active' : ''}" onclick="filterByDepartment('all', this)">All Departments</button>` +
+        state.departments.map(d => `<button class="pill ${activeDept === String(d._id) ? 'active' : ''}" onclick="filterByDepartment('${d._id}', this)">${d.name} (${d.doctorCount || 0})</button>`).join('');
+    }
 
     // Render in Admin Dept table if present
     renderAdminDepartments();
@@ -307,9 +445,19 @@ async function loadDepartments() {
 async function loadDoctors() {
   try {
     const res = await apiCall('/doctors');
-    state.doctors = res.data;
-    renderDoctorGrid(res.data);
-    populateDoctorSelect(res.data);
+    state.doctors = res.data || [];
+    
+    // Apply current filter or render all
+    const currentDept = state.selectedDepartment || 'all';
+    const filtered = (currentDept === 'all')
+      ? state.doctors
+      : state.doctors.filter(d => {
+          const dDeptId = d.departmentId ? (d.departmentId._id || d.departmentId) : '';
+          return String(dDeptId) === String(currentDept);
+        });
+
+    renderDoctorGrid(filtered);
+    populateDoctorSelect(state.doctors);
   } catch (err) {
     console.error(err);
   }
@@ -317,63 +465,125 @@ async function loadDoctors() {
 
 function renderDoctorGrid(doctors) {
   const container = document.getElementById('doctorCardsGrid');
-  if (!doctors.length) {
-    container.innerHTML = `<p class="text-muted">No specialists found matching your search.</p>`;
+  if (!container) return;
+
+  if (!doctors || !doctors.length) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 2.5rem 1rem; background: var(--white); border-radius: var(--radius-lg); border: 1px dashed var(--border);">
+        <div style="width: 50px; height: 50px; line-height: 50px; border-radius: 50%; background: var(--light-cyan); color: var(--teal); margin: 0 auto 0.75rem; font-size: 1.4rem;">
+          <i class="fa-solid fa-user-doctor"></i>
+        </div>
+        <h4 style="color: var(--dark); margin-bottom: 0.35rem;">No Specialists Found</h4>
+        <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1rem;">No registered doctors found matching your current department or search filter.</p>
+        <button class="btn btn-sm btn-outline" onclick="resetDoctorFilters()">
+          <i class="fa-solid fa-arrows-rotate"></i> Show All Specialists
+        </button>
+      </div>
+    `;
     return;
   }
 
-  container.innerHTML = doctors.map(doc => `
-    <div class="doctor-card">
-      <div class="doctor-header">
-        <div class="doc-avatar"><i class="fa-solid fa-user-doctor"></i></div>
-        <div class="doc-title">
-          <h3>${doc.userId ? doc.userId.name : 'Medical Doctor'}</h3>
-          <span class="doc-dept">${doc.departmentId ? doc.departmentId.name : 'General Care'}</span>
-          <div class="doc-spec">${doc.specialization}</div>
+  container.innerHTML = doctors.map(doc => {
+    const docName = (doc.userId && doc.userId.name) ? doc.userId.name : (doc.name || 'Medical Specialist');
+    const deptName = (doc.departmentId && doc.departmentId.name) ? doc.departmentId.name : 'General Care';
+    const spec = doc.specialization || 'Consultant Specialist';
+    const exp = doc.experienceYears || 1;
+    const fee = doc.consultationFee || 50;
+    const slots = doc.availabilitySlots || [];
+    const availableDays = slots.map(s => s.dayOfWeek ? s.dayOfWeek.slice(0, 3) : '').filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ') || 'Mon - Fri';
+
+    return `
+      <div class="doctor-card">
+        <div class="doctor-header">
+          <div class="doc-avatar"><i class="fa-solid fa-user-doctor"></i></div>
+          <div class="doc-title">
+            <h3>${docName}</h3>
+            <span class="doc-dept">${deptName}</span>
+            <div class="doc-spec">${spec}</div>
+          </div>
         </div>
+        <div class="doc-stats">
+          <span>Exp: <strong>${exp} Years</strong></span>
+          <span>Fee: <strong>₹${fee}</strong></span>
+          <span>Slots: <strong>${slots.length} Active</strong></span>
+        </div>
+        <div class="doc-slots-preview">
+          <i class="fa-regular fa-clock"></i> Available: ${availableDays}
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="initiateBooking('${doc._id}')">
+          <i class="fa-regular fa-calendar-plus"></i> Book Consultation
+        </button>
       </div>
-      <div class="doc-stats">
-        <span>Exp: <strong>${doc.experienceYears} Years</strong></span>
-        <span>Fee: <strong>₹${doc.consultationFee}</strong></span>
-        <span>Slots: <strong>${doc.availabilitySlots.length} Active</strong></span>
-      </div>
-      <div class="doc-slots-preview">
-        <i class="fa-regular fa-clock"></i> Available: ${doc.availabilitySlots.map(s => s.dayOfWeek.slice(0, 3)).filter((v, i, a) => a.indexOf(v) === i).join(', ') || 'Mon - Fri'}
-      </div>
-      <button class="btn btn-sm btn-primary" onclick="initiateBooking('${doc._id}')">
-        <i class="fa-regular fa-calendar-plus"></i> Book Consultation
-      </button>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function populateDoctorSelect(doctors) {
   const select = document.getElementById('bookDoctorSelect');
   if (!select) return;
   select.innerHTML = `<option value="">-- Choose Specialist --</option>` +
-    doctors.map(d => `<option value="${d._id}" data-fee="${d.consultationFee}">${d.userId.name} - ${d.specialization} (₹${d.consultationFee})</option>`).join('');
+    (doctors || []).map(d => {
+      const name = (d.userId && d.userId.name) ? d.userId.name : (d.name || 'Doctor');
+      return `<option value="${d._id}" data-fee="${d.consultationFee}">${name} - ${d.specialization} (₹${d.consultationFee})</option>`;
+    }).join('');
 }
 
-function filterByDepartment(deptId) {
+async function filterByDepartment(deptId, targetBtn) {
   state.selectedDepartment = deptId;
   document.querySelectorAll('#deptFilterPills .pill').forEach(el => el.classList.remove('active'));
-  event.target.classList.add('active');
+
+  const btn = targetBtn || (window.event && window.event.target ? window.event.target.closest('.pill') : null);
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    document.querySelectorAll('#deptFilterPills .pill').forEach(b => {
+      if (deptId === 'all' && b.textContent.includes('All')) b.classList.add('active');
+      else if (b.getAttribute('onclick')?.includes(deptId)) b.classList.add('active');
+    });
+  }
+
+  // If state.doctors is not yet loaded, load from server
+  if (!state.doctors || state.doctors.length === 0) {
+    await loadDoctors();
+    return;
+  }
 
   const filtered = (deptId === 'all')
     ? state.doctors
-    : state.doctors.filter(d => d.departmentId && d.departmentId._id === deptId);
+    : state.doctors.filter(d => {
+        const dDeptId = d.departmentId ? (d.departmentId._id || d.departmentId) : '';
+        return String(dDeptId) === String(deptId);
+      });
 
   renderDoctorGrid(filtered);
 }
 
 function filterDoctors() {
-  const term = document.getElementById('doctorSearchInput').value.toLowerCase();
-  const filtered = state.doctors.filter(d => 
-    (d.userId && d.userId.name.toLowerCase().includes(term)) ||
-    d.specialization.toLowerCase().includes(term) ||
-    (d.departmentId && d.departmentId.name.toLowerCase().includes(term))
-  );
+  const term = (document.getElementById('doctorSearchInput').value || '').toLowerCase();
+  const currentDept = state.selectedDepartment || 'all';
+
+  let list = state.doctors || [];
+  if (currentDept !== 'all') {
+    list = list.filter(d => {
+      const dDeptId = d.departmentId ? (d.departmentId._id || d.departmentId) : '';
+      return String(dDeptId) === String(currentDept);
+    });
+  }
+
+  const filtered = list.filter(d => {
+    const docName = (d.userId?.name || d.name || '').toLowerCase();
+    const spec = (d.specialization || '').toLowerCase();
+    const dept = (d.departmentId?.name || '').toLowerCase();
+    return docName.includes(term) || spec.includes(term) || dept.includes(term);
+  });
+
   renderDoctorGrid(filtered);
+}
+
+function resetDoctorFilters() {
+  const searchInput = document.getElementById('doctorSearchInput');
+  if (searchInput) searchInput.value = '';
+  filterByDepartment('all');
 }
 
 // -------------------------------------------------------------
@@ -514,7 +724,7 @@ async function loadMyAppointments() {
     container.innerHTML = res.data.map(appt => `
       <div class="appointment-card">
         <div class="appointment-info">
-          <h3>Dr. ${appt.doctorId ? appt.doctorId.userId.name : 'Specialist'} - ${appt.departmentId ? appt.departmentId.name : ''}</h3>
+          <h3>Dr. ${(appt.doctorId && appt.doctorId.userId && appt.doctorId.userId.name) || appt.doctorName || 'Specialist'} - ${(appt.departmentId && appt.departmentId.name) || ''}</h3>
           <div class="appointment-meta">
             <span><i class="fa-regular fa-calendar"></i> ${appt.appointmentDate}</span>
             <span><i class="fa-regular fa-clock"></i> ${appt.slotTime}</span>
@@ -564,50 +774,73 @@ async function cancelAppointment(appointmentId) {
 // -------------------------------------------------------------
 async function loadDoctorAppointments() {
   const container = document.getElementById('doctorAppointmentsList');
+  if (!container) return;
   container.innerHTML = '<div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading schedule...</div>';
 
   try {
     const res = await apiCall('/appointments');
-    if (!res.data.length) {
-      container.innerHTML = `<div class="card"><p class="text-muted">No appointments assigned to you currently.</p></div>`;
+    if (!res.data || !res.data.length) {
+      container.innerHTML = `
+        <div class="card" style="text-align: center; padding: 2.5rem 1rem;">
+          <div style="width: 48px; height: 48px; line-height: 48px; border-radius: 50%; background: var(--light-cyan); color: var(--teal); margin: 0 auto 0.75rem; font-size: 1.3rem;">
+            <i class="fa-regular fa-calendar-check"></i>
+          </div>
+          <h4 style="color: var(--dark); margin-bottom: 0.35rem;">No Appointments Assigned</h4>
+          <p class="text-muted" style="font-size: 0.9rem;">You have no patient consultations scheduled at this time.</p>
+        </div>
+      `;
       return;
     }
 
-    container.innerHTML = res.data.map(appt => `
-      <div class="appointment-card">
-        <div class="appointment-info">
-          <h3>${appt.patientId ? appt.patientId.userId.name : 'Patient'} (Blood: ${appt.patientId ? appt.patientId.bloodGroup : 'N/A'})</h3>
-          <div class="appointment-meta">
-            <span><i class="fa-regular fa-calendar"></i> ${appt.appointmentDate}</span>
-            <span><i class="fa-regular fa-clock"></i> ${appt.slotTime}</span>
-            <span>Reason: <em>${appt.reason || 'General'}</em></span>
+    container.innerHTML = res.data.map(appt => {
+      const patientName = (appt.patientId && appt.patientId.userId && appt.patientId.userId.name) || appt.patientName || 'Patient';
+      const bloodGroup = (appt.patientId && appt.patientId.bloodGroup) || 'N/A';
+      const reason = appt.reason || 'General Consultation';
+      const statusClass = (appt.status || 'booked').toLowerCase();
+
+      return `
+        <div class="appointment-card">
+          <div class="appointment-info">
+            <h3>${patientName} <span style="font-size: 0.8rem; font-weight: 500; color: var(--muted);">(Blood: ${bloodGroup})</span></h3>
+            <div class="appointment-meta">
+              <span><i class="fa-regular fa-calendar"></i> ${appt.appointmentDate}</span>
+              <span><i class="fa-regular fa-clock"></i> ${appt.slotTime}</span>
+              <span>Reason: <em>${reason}</em></span>
+            </div>
+          </div>
+          <div class="appointment-actions">
+            <span class="badge badge-${statusClass}">${appt.status}</span>
+            ${appt.status === 'Booked' ? `
+              <button class="btn btn-xs btn-success" onclick="updateDoctorApptStatus('${appt._id}', 'Confirmed')">
+                <i class="fa-solid fa-check"></i> Confirm
+              </button>
+            ` : ''}
+            ${['Booked', 'Confirmed'].includes(appt.status) ? `
+              <button class="btn btn-xs btn-primary" onclick="openPrescriptionModal('${appt._id}', '${patientName}')">
+                <i class="fa-solid fa-stethoscope"></i> Issue Rx & Complete
+              </button>
+              <button class="btn btn-xs btn-outline" onclick="updateDoctorApptStatus('${appt._id}', 'No-show')">
+                No-show
+              </button>
+            ` : ''}
+            ${appt.status === 'Completed' ? `
+              <button class="btn btn-xs btn-outline" onclick="viewPrescriptionForAppointment('${appt._id}')">
+                <i class="fa-solid fa-prescription"></i> View Rx
+              </button>
+            ` : ''}
           </div>
         </div>
-        <div class="appointment-actions">
-          <span class="badge badge-${appt.status.toLowerCase()}">${appt.status}</span>
-          ${appt.status === 'Booked' ? `
-            <button class="btn btn-xs btn-success" onclick="updateDoctorApptStatus('${appt._id}', 'Confirmed')">
-              <i class="fa-solid fa-check"></i> Confirm
-            </button>
-          ` : ''}
-          ${['Booked', 'Confirmed'].includes(appt.status) ? `
-            <button class="btn btn-xs btn-primary" onclick="openPrescriptionModal('${appt._id}', '${appt.patientId ? appt.patientId.userId.name : 'Patient'}')">
-              <i class="fa-solid fa-stethoscope"></i> Issue Rx & Complete
-            </button>
-            <button class="btn btn-xs btn-outline" onclick="updateDoctorApptStatus('${appt._id}', 'No-show')">
-              No-show
-            </button>
-          ` : ''}
-          ${appt.status === 'Completed' ? `
-            <button class="btn btn-xs btn-outline" onclick="viewPrescriptionForAppointment('${appt._id}')">
-              <i class="fa-solid fa-prescription"></i> View Rx
-            </button>
-          ` : ''}
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   } catch (err) {
-    container.innerHTML = '<p class="text-danger">Failed to load doctor appointments.</p>';
+    container.innerHTML = `
+      <div class="card" style="text-align: center; padding: 2rem;">
+        <p class="text-danger" style="margin-bottom: 0.75rem;">${err.message || 'Failed to load doctor appointments.'}</p>
+        <button class="btn btn-sm btn-outline" onclick="loadDoctorAppointments()">
+          <i class="fa-solid fa-arrows-rotate"></i> Retry
+        </button>
+      </div>
+    `;
   }
 }
 
@@ -718,12 +951,12 @@ async function viewPrescriptionForAppointment(appointmentId) {
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 0.85rem;">
         <div>
-          <strong>Patient:</strong> ${rx.patientId ? rx.patientId.userId.name : 'Patient'}<br>
+          <strong>Patient:</strong> ${(rx.patientId && rx.patientId.userId && rx.patientId.userId.name) || 'Patient'}<br>
           <strong>Blood Group:</strong> ${rx.patientId ? rx.patientId.bloodGroup : 'N/A'}
         </div>
         <div style="text-align: right;">
-          <strong>Attending Doctor:</strong> Dr. ${rx.doctorId ? rx.doctorId.userId.name : 'Specialist'}<br>
-          <strong>Specialization:</strong> ${rx.doctorId ? rx.doctorId.departmentId.name : ''}
+          <strong>Attending Doctor:</strong> Dr. ${(rx.doctorId && rx.doctorId.userId && rx.doctorId.userId.name) || 'Specialist'}<br>
+          <strong>Specialization:</strong> ${(rx.doctorId && (rx.doctorId.specialization || (rx.doctorId.departmentId && rx.doctorId.departmentId.name))) || ''}
         </div>
       </div>
       <div style="background: #f8fafc; padding: 0.75rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">
@@ -859,7 +1092,7 @@ async function loadPatientHistory() {
             <div class="timeline-card">
               <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                  <h4 style="font-size: 1rem; color: var(--dark);">Visit with Dr. ${appt.doctorId ? appt.doctorId.userId.name : 'Specialist'} (${appt.departmentId ? appt.departmentId.name : ''})</h4>
+                  <h4 style="font-size: 1rem; color: var(--dark);">Visit with Dr. ${(appt.doctorId && appt.doctorId.userId && appt.doctorId.userId.name) || 'Specialist'} (${(appt.departmentId && appt.departmentId.name) || ''})</h4>
                   <small class="text-muted"><i class="fa-regular fa-calendar"></i> ${appt.appointmentDate} at ${appt.slotTime}</small>
                 </div>
                 <span class="badge badge-${appt.status.toLowerCase()}">${appt.status}</span>
@@ -900,7 +1133,7 @@ async function loadMyBillings() {
     tbody.innerHTML = res.data.map(b => `
       <tr>
         <td><strong>#${b.invoiceNumber}</strong></td>
-        <td>Dr. ${b.doctorId ? b.doctorId.userId.name : 'Specialist'}</td>
+        <td>Dr. ${(b.doctorId && b.doctorId.userId && b.doctorId.userId.name) || 'Specialist'}</td>
         <td>₹${b.amount.toFixed(2)}</td>
         <td>₹${b.tax.toFixed(2)}</td>
         <td><strong class="text-primary">₹${b.totalAmount.toFixed(2)}</strong></td>
